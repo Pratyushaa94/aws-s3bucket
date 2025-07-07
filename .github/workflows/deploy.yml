@@ -29,7 +29,9 @@ jobs:
         run: terraform init
 
       - name: Terraform Plan
-        run: terraform plan -var-file="terraform.tfvars" -out=tfplan
+        run: |
+          terraform plan -var-file="terraform.tfvars" -out=tfplan
+          terraform show -json tfplan > plan.json
 
       - name: Setup Infracost
         uses: infracost/actions/setup@v1
@@ -39,7 +41,7 @@ jobs:
       - name: Generate Infracost cost estimate
         run: |
           infracost breakdown \
-            --path=. \
+            --path=plan.json \
             --format=json \
             --show-skipped \
             --out-file=infracost.json
