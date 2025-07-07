@@ -1,17 +1,13 @@
-name: Terraform Plan with Cost Estimate
+name: Terraform Plan Only
 
 on:
   push:
     branches:
       - main
 
-permissions:
-  contents: read
-  pull-requests: write
-
 jobs:
   terraform:
-    name: 'Plan and Cost Analysis'
+    name: 'Terraform Plan'
     runs-on: ubuntu-latest
 
     env:
@@ -29,29 +25,16 @@ jobs:
         run: terraform init
 
       - name: Terraform Plan
+        run: terraform plan -var-file="terraform.tfvars"
+
+      - name: Print Estimated Cost for S3 with Versioning
         run: |
-          terraform plan -var-file="terraform.tfvars" -out=tfplan
-          terraform show -json tfplan > plan.json
+          echo "###  Estimated Cost Summary" >> $GITHUB_STEP_SUMMARY
+          echo "-  **S3 Bucket (Standard + Versioning):**" >> $GITHUB_STEP_SUMMARY
+          echo "  - \$0.023 per GB stored/month" >> $GITHUB_STEP_SUMMARY
+          echo "  - Each object version is stored and billed separately" >> $GITHUB_STEP_SUMMARY
+          echo "  - Consider adding lifecycle rules to delete older versions to reduce cost" >> $GITHUB_STEP_SUMMARY
 
-      - name: Setup Infracost
-        uses: infracost/actions/setup@v1
-        with:
-          api-key: ${{ secrets.INFRACOST_API_KEY }}
-
-      - name: Generate Infracost cost estimate
-        run: |
-          infracost breakdown \
-            --path=plan.json \
-            --format=json \
-            --show-skipped \
-            --out-file=infracost.json
-
-      - name: Post Infracost comment
-        uses: infracost/actions@v1
-        with:
-          path: infracost.json
-          behavior: update
-
-      # Uncomment the line below to enable apply
+      # Uncomment this to apply automatically (optional)
       # - name: Terraform Apply
       #   run: terraform apply -auto-approve -var-file="terraform.tfvars"
