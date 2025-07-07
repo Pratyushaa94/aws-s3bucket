@@ -7,29 +7,25 @@ on:
 
 jobs:
   create-s3-backend:
-    name: 'Create S3 Backend'
+    name: 'Create Backend S3 Bucket Only'
     runs-on: ubuntu-latest
 
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
-      BUCKET_NAME: "terraform-state-pratyushaa94"  # You can customize this bucket name
+      BUCKET_NAME: "terraform-state-pratyushaa94"
 
     steps:
-      - name: Create S3 Bucket
+      - name: Create S3 Bucket for Backend
         run: |
-          # Check if bucket exists
           if ! aws s3api head-bucket --bucket $BUCKET_NAME 2>/dev/null; then
-            # Create the S3 bucket
             aws s3api create-bucket --bucket $BUCKET_NAME --region $AWS_DEFAULT_REGION
-            
-            # Enable versioning
+
             aws s3api put-bucket-versioning \
               --bucket $BUCKET_NAME \
               --versioning-configuration Status=Enabled
-            
-            # Enable server-side encryption
+
             aws s3api put-bucket-encryption \
               --bucket $BUCKET_NAME \
               --server-side-encryption-configuration '{
@@ -41,19 +37,6 @@ jobs:
                   }
                 ]
               }'
+          else
+            echo "Bucket already exists."
           fi
-
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init (Backend)
-        run: terraform init -backend-config="backend.tf"
-
-      - name: Terraform Plan
-        run: terraform plan -var-file="terraform.tfvars" -out=tfplan
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
