@@ -32,24 +32,24 @@ jobs:
         run: terraform plan -var-file="terraform.tfvars" -out=tfplan
 
       - name: Setup Infracost
-        uses: infracost/actions/setup@v2
+        uses: infracost/actions/setup@v1
         with:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
 
       - name: Generate Infracost cost estimate
         run: |
-          infracost breakdown --path . \
-            --format json \
+          infracost breakdown \
+            --path=. \
+            --format=json \
             --show-skipped \
-            --out-file infracost.json
+            --out-file=infracost.json
 
       - name: Post Infracost comment
         uses: infracost/actions@v1
         with:
           path: infracost.json
           behavior: update
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Commented apply step for later use
+      # Uncomment the line below to enable apply
       # - name: Terraform Apply
       #   run: terraform apply -auto-approve -var-file="terraform.tfvars"
