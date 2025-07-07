@@ -1,4 +1,4 @@
-name: Terraform Apply
+name: Terraform Plan with Cost Estimate
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   terraform:
-    name: 'Terraform Deploy'
+    name: 'Plan and Cost Analysis'
     runs-on: ubuntu-latest
 
     env:
@@ -25,7 +25,27 @@ jobs:
         run: terraform init
 
       - name: Terraform Plan
-        run: terraform plan -var-file="terraform.tfvars"
+        run: terraform plan -var-file="terraform.tfvars" -out=tfplan
 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve -var-file="terraform.tfvars"
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v2
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Generate Infracost cost estimate
+        run: |
+          infracost breakdown --path . \
+            --format json \
+            --show-skipped \
+            --out-file infracost.json
+
+      - name: Post Infracost comment
+        uses: infracost/actions/comment@v2
+        with:
+          path: infracost.json
+          behavior: update
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Commented apply step for later use
+      # - name: Terraform Apply
+      #   run: terraform apply -auto-approve -var-file="terraform.tfvars"
