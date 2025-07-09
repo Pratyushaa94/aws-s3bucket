@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: plan
     environment:
-      name: dev-approval
+      name: dev-approval  # 👈 approval gate
 
     defaults:
       run:
@@ -115,6 +115,8 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
 
       - name: Terraform Init
         run: terraform init
