@@ -4,7 +4,7 @@ This repository contains Terraform configuration to **automate the creation of a
 
 ---
 
-##  Project Structure
+##  Project Structure-
 
 ```
 terraform-s3-automation/
