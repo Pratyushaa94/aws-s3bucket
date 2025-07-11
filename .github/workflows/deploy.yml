@@ -73,30 +73,37 @@ jobs:
         with:
           name: tfplan
           path: tfplan
-
-      - name: Attach Manual Cost Summary
+          
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v2.1.0
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+ 
+      - name: Run Infracost Breakdown
         run: |
-          echo "## Estimated Monthly Costs (Dev Environment)" > manual-cost-summary.md
-          echo "| Resource       | Quantity | Pricing (approx) | Total Cost |" >> manual-cost-summary.md
-          echo "|----------------|----------|------------------|------------|" >> manual-cost-summary.md
-          echo "| S3 Bucket      | 1        | \$0.023 / GB     | \$0.10     |" >> manual-cost-summary.md
-          echo "| PUT Requests   | 1000     | \$0.005 / 1000   | \$0.005    |" >> manual-cost-summary.md
-          echo "| Versioning     | Enabled  | N/A              | \$0.00     |" >> manual-cost-summary.md
-          echo "" >> manual-cost-summary.md
-          echo "**Total Estimate:** ~\$0.10–\$0.20/month" >> manual-cost-summary.md
-
-      - name: Upload Manual Cost Summary
+          infracost breakdown \
+          --path=plan.json \
+          --format=table \
+          --out-file=infracost-report.txt
+          
+      - name: Upload Infracost Report artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cost-summary
-          path: manual-cost-summary.md
-
+          name: infracost-report
+          #path: infracost-report.json
+          path: infracost-report.txt
+ 
+      - name: Show Infracost report saved info
+        run: |
+          echo "INFO: Infracost cost breakdown report:"
+          cat infracost-report.txt
+          
   apply:
     name: Terraform Apply (Manual Approval)
     runs-on: ubuntu-latest
     needs: plan
     environment:
-      name: dev-approval  # 👈 approval gate
+      name: dev-approval
 
     defaults:
       run:
